@@ -57,7 +57,8 @@ type Notification struct {
 }
 
 //ReadNotification reads a notification from an //IPN request
-func ReadNotification(vals url.Values) (*Notification, error) {
+func ReadNotification(vals url.Values) *Notification {
 	n := &Notification{}
-	return n, decoder.Decode(n, vals)
+	decoder.Decode(n, vals) //errors due to missing fields in struct
+	return n
 }

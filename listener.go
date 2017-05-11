@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"net/url"
+
 	"github.com/pkg/errors"
 )
 
@@ -18,23 +20,26 @@ var Debug = false
 //if err is set in cb, PayPal will resend the notification at some future point.
 func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		notification, err := ReadNotification(r.PostForm)
-		if err != nil {
-			cb(errors.Wrap(err, "failed to read notification"), nil)
-		}
-		if Debug {
-			fmt.Printf("form: %+vm noti: %+v\n", r.PostForm, notification)
-		}
-
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			cb(errors.Wrap(err, "failed to read body"), nil)
 		}
 
-		contentType := r.Header.Get("Content-Type")
+		form, err := url.ParseQuery(string(body))
+		if err != nil {
+			cb(errors.Wrap(err, "failed to parse query"), nil)
+			return
+		}
+
+		notification := ReadNotification(form)
+
+		if Debug {
+			fmt.Printf("paypal: form: %s, parsed: %+v\n", body, notification)
+		}
+
 		body = append([]byte("cmd=_notify-validate&"), body...)
 
-		resp, err := http.Post(LiveIPNEndpoint, contentType, bytes.NewReader(body))
+		resp, err := http.Post(LiveIPNEndpoint, r.Header.Get("Content-Type"), bytes.NewReader(body))
 		if err != nil {
 			cb(errors.Wrap(err, "failed to create post verification req"), nil)
 			return
@@ -52,6 +57,7 @@ func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
 		}
 
 		// notification confirmed here
+
 		// tell PayPal to not send more notificatins
 		w.WriteHeader(http.StatusOK)
 		cb(nil, notification)
