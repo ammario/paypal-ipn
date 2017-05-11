@@ -2,6 +2,7 @@ package ipn
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -11,10 +12,20 @@ import (
 //LiveIPNEndpoint contains the notification verification URL
 const LiveIPNEndpoint = "https://www.paypal.com/cgi-bin/webscr"
 
+var Debug = false
+
 //Listener creates a PayPal listener.
 //if err is set in cb, PayPal will resend the notification at some future point.
 func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		notification, err := ReadNotification(r.PostForm)
+		if err != nil {
+			cb(errors.Wrap(err, "failed to read notification"), nil)
+		}
+		if Debug {
+			fmt.Printf("form: %+vm noti: %+v\n", r.PostForm, notification)
+		}
+
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			cb(errors.Wrap(err, "failed to read body"), nil)
@@ -40,12 +51,8 @@ func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
 			return
 		}
 
-		//notification confirmed here
-		notification, err := ReadNotification(r.PostForm)
-		if err != nil {
-			cb(errors.Wrap(err, "failed to read notification"), nil)
-		}
-		//tell PayPal to not send more notificatins
+		// notification confirmed here
+		// tell PayPal to not send more notificatins
 		w.WriteHeader(http.StatusOK)
 		cb(nil, notification)
 	}
