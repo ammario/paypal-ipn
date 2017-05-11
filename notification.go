@@ -1,6 +1,7 @@
 package ipn
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/gorilla/schema"
@@ -54,6 +55,15 @@ type Notification struct {
 	Gross    float64 `schema:"mc_gross"`
 
 	Memo string `schema:"memo"`
+}
+
+//CustomerInfo returns a nicely formatted customer info string
+func (n *Notification) CustomerInfo() string {
+	const form = `%v %v
+%v
+%v, %v, %v, %v %v
+%v`
+	return fmt.Sprintf(form, n.FirstName, n.LastName, n.PayerEmail, n.AddressStreet, n.AddressCity, n.AddressState, n.AddressZip, n.AddressCountry, n.PayerStatus)
 }
 
 //ReadNotification reads a notification from an //IPN request
