@@ -1,0 +1,52 @@
+package ipn
+
+import (
+	"bytes"
+	"io/ioutil"
+	"net/http"
+
+	"github.com/pkg/errors"
+)
+
+//LiveIPNEndpoint contains the notification verification URL
+const LiveIPNEndpoint = "https://www.paypal.com/cgi-bin/webscr"
+
+//Listener creates a PayPal listener.
+//if err is set in cb, PayPal will resend the notification at some future point.
+func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			cb(errors.Wrap(err, "failed to read body"), nil)
+		}
+
+		contentType := r.Header.Get("Content-Type")
+		body = append([]byte("cmd=_notify-validate&"), body...)
+
+		resp, err := http.Post(LiveIPNEndpoint, contentType, bytes.NewReader(body))
+		if err != nil {
+			cb(errors.Wrap(err, "failed to create post verification req"), nil)
+			return
+		}
+		defer resp.Body.Close()
+
+		verifyStatus, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			cb(errors.Wrap(err, "failed to read verification response"), nil)
+			return
+		}
+		if string(verifyStatus) != "VERIFIED" {
+			cb(errors.Errorf("unexpected verify status %q", verifyStatus), nil)
+			return
+		}
+
+		//notification confirmed here
+		notification, err := ReadNotification(r.PostForm)
+		if err != nil {
+			cb(errors.Wrap(err, "failed to read notification"), nil)
+		}
+		//tell PayPal to not send more notificatins
+		w.WriteHeader(http.StatusOK)
+		cb(nil, notification)
+	}
+}
