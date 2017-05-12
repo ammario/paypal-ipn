@@ -54,6 +54,9 @@ type Notification struct {
 	Fee      float64 `schema:"mc_fee"`
 	Gross    float64 `schema:"mc_gross"`
 
+	//ReasonCode is populated if the payment is negative
+	ReasonCode string `schema:"reason_code"`
+
 	Memo string `schema:"memo"`
 }
 
