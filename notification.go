@@ -9,6 +9,52 @@ import (
 
 var decoder = schema.NewDecoder()
 
+// PaymentStatus represents the status of a payment
+type PaymentStatus string
+
+// Payment statuses
+var (
+	PaymentStatusCanceledReversal PaymentStatus = "Canceled_Reversal"
+	PaymentStatusCompleted        PaymentStatus = "Completed"
+	PaymentStatusCreated          PaymentStatus = "Created"
+	PaymentStatusDenied           PaymentStatus = "Denied"
+	PaymentStatusExpired          PaymentStatus = "Expired"
+	PaymentStatusFailed           PaymentStatus = "Failed"
+	PaymentStatusPending          PaymentStatus = "Pending"
+	PaymentStatusReversed         PaymentStatus = "Reversed"
+	PaymentStatusProcessed        PaymentStatus = "Processed"
+	PaymentStatusVoided           PaymentStatus = "Voided"
+)
+
+// PaymentType represents the type of a payment
+type PaymentType string
+
+// Payment Types
+var (
+	PaymentTypeEcheck  PaymentType = "echeck"
+	PaymentTypeInstant PaymentType = "instant"
+)
+
+// PendingReason represents the reason the payment is pending
+type PendingReason string
+
+// Pending reasons
+var (
+	PendingReasonAddress             PendingReason = "address"
+	PendingReasonAuthorization       PendingReason = "authorization"
+	PendingReasonDelayedDisbursement PendingReason = "delayed_disbursement"
+	PendingReasonEcheck              PendingReason = "echeck"
+	PendingResasonIntl               PendingReason = "intl"
+	PendingReasonMultiCurrency       PendingReason = "multi_currency"
+	PendingReasonOrder               PendingReason = "order"
+	PendingReasonPaymentReview       PendingReason = "paymentreview"
+	PendingReasonRegulatoryReview    PendingReason = "regulatory_review"
+	PendingReasonUnilateral          PendingReason = "unilateral"
+	PendingReasonUpgrade             PendingReason = "upgrade"
+	PendingReasonVerify              PendingReason = "verify"
+	PendingReasonOther               PendingReason = "other"
+)
+
 // Notification is sent from PayPal to our application.
 // See https://developer.paypal.com/docs/classic/ipn/integration-guide/IPNandPDTVariables for more info
 type Notification struct {
@@ -55,7 +101,10 @@ type Notification struct {
 	Gross    float64 `schema:"mc_gross"`
 
 	//ReasonCode is populated if the payment is negative
-	ReasonCode string `schema:"reason_code"`
+	PaymentStatus PaymentStatus `schema:"payment_status"`
+	PaymentType   PaymentType   `schema:"payment_type"`
+	PendingReason PendingReason `schema:"pending_reason"`
+	ReasonCode    string        `schema:"reason_code"`
 
 	Memo string `schema:"memo"`
 }
