@@ -33,6 +33,7 @@ func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			cb(errors.Wrap(err, "failed to read body"), nil)
+			return
 		}
 
 		form, err := url.ParseQuery(string(body))
