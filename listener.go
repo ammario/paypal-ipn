@@ -19,7 +19,7 @@ const SandboxIPNEndpoint = "https://ipnpb.sandbox.paypal.com/cgi-bin/webscr"
 
 var Debug = false
 
-func getEndpint(testIPN bool) string {
+func getEndpoint(testIPN bool) string {
 	if testIPN {
 		return SandboxIPNEndpoint
 	}
@@ -50,7 +50,7 @@ func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
 
 		body = append([]byte("cmd=_notify-validate&"), body...)
 
-		resp, err := http.Post(getEndpint(notification.TestIPN), r.Header.Get("Content-Type"), bytes.NewReader(body))
+		resp, err := http.Post(getEndpoint(notification.TestIPN), r.Header.Get("Content-Type"), bytes.NewReader(body))
 		if err != nil {
 			cb(errors.Wrap(err, "failed to create post verification req"), nil)
 			return
