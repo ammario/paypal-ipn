@@ -14,7 +14,7 @@ import (
 //LiveIPNEndpoint contains the notification verification URL
 const LiveIPNEndpoint = "https://www.paypal.com/cgi-bin/webscr"
 
-//SandboxIPNEndpoint the Sandbox notification verification URL
+//SandboxIPNEndpoint is the Sandbox notification verification URL
 const SandboxIPNEndpoint = "https://ipnpb.sandbox.paypal.com/cgi-bin/webscr"
 
 var Debug = false
