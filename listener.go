@@ -14,7 +14,17 @@ import (
 //LiveIPNEndpoint contains the notification verification URL
 const LiveIPNEndpoint = "https://www.paypal.com/cgi-bin/webscr"
 
+//SandboxIPNEndpoint is the Sandbox notification verification URL
+const SandboxIPNEndpoint = "https://ipnpb.sandbox.paypal.com/cgi-bin/webscr"
+
 var Debug = false
+
+func getEndpoint(testIPN bool) string {
+	if testIPN {
+		return SandboxIPNEndpoint
+	}
+	return LiveIPNEndpoint
+}
 
 //Listener creates a PayPal listener.
 //if err is set in cb, PayPal will resend the notification at some future point.
@@ -23,6 +33,7 @@ func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			cb(errors.Wrap(err, "failed to read body"), nil)
+			return
 		}
 
 		form, err := url.ParseQuery(string(body))
@@ -39,7 +50,7 @@ func Listener(cb func(err error, n *Notification)) http.HandlerFunc {
 
 		body = append([]byte("cmd=_notify-validate&"), body...)
 
-		resp, err := http.Post(LiveIPNEndpoint, r.Header.Get("Content-Type"), bytes.NewReader(body))
+		resp, err := http.Post(getEndpoint(notification.TestIPN), r.Header.Get("Content-Type"), bytes.NewReader(body))
 		if err != nil {
 			cb(errors.Wrap(err, "failed to create post verification req"), nil)
 			return
