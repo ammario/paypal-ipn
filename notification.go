@@ -3,11 +3,16 @@ package ipn
 import (
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/gorilla/schema"
 )
 
 var decoder = schema.NewDecoder()
+
+type Time struct {
+	Time *time.Time
+}
 
 // PaymentStatus represents the status of a payment
 type PaymentStatus string
@@ -69,6 +74,8 @@ type Notification struct {
 	Resend           bool   `schema:"resend"`
 	ResidenceCountry string `schema:"residence_country"`
 	TestIPN          bool   `schema:"test_ipn"`
+	ItemName         string `schema:"item_name"`
+	ItemNumber       string `schema:"item_number"`
 
 	//Buyer address information
 	AddressCountry     string `schema:"address_country"`
@@ -100,11 +107,13 @@ type Notification struct {
 	Fee      float64 `schema:"mc_fee"`
 	Gross    float64 `schema:"mc_gross"`
 
-	//ReasonCode is populated if the payment is negative
+	PaymentDate   Time          `schema:"payment_date"`
 	PaymentStatus PaymentStatus `schema:"payment_status"`
 	PaymentType   PaymentType   `schema:"payment_type"`
 	PendingReason PendingReason `schema:"pending_reason"`
-	ReasonCode    string        `schema:"reason_code"`
+
+	//ReasonCode is populated if the payment is negative
+	ReasonCode string `schema:"reason_code"`
 
 	Memo string `schema:"memo"`
 }
@@ -123,4 +132,19 @@ func ReadNotification(vals url.Values) *Notification {
 	n := &Notification{}
 	decoder.Decode(n, vals) //errors due to missing fields in struct
 	return n
+}
+
+const timeLayout = "15:04:05 Jan 02, 2006 MST"
+
+func (t *Time) UnmarshalText(text []byte) (err error) {
+	loc, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		return err
+	}
+	tmp, err := time.ParseInLocation(timeLayout, string(text), loc)
+	if err != nil {
+		return err
+	}
+	t.Time = &tmp
+	return nil
 }
